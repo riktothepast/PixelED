@@ -16,8 +16,8 @@ public class Main {
                 	JFrame jframe=new JFrame();
                 	jframe.remove(this);
             		jframe.setTitle("PixelED");
-            		jframe.setSize(960, 768);
-            		Editor scr= new Editor(20,13,48, getSelectedFile());
+            		jframe.setSize(1024, 768);
+            		Editor scr= new Editor(25,16,24, getSelectedFile());
             		jframe.add(scr);
             		jframe.setVisible(true);
             		jframe.addKeyListener(scr);

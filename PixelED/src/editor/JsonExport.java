@@ -20,8 +20,8 @@ public class JsonExport {
 		for(int x=0;x<tiles.length;x++){
 			for(int y=0;y<tiles[0].length;y++){
 				if(tiles[x][y]!=-1){
-					salida += "{\"x\" : "+x+", ";
-					salida += "\"y\" : "+y+", ";
+					salida += "{\"x\" : "+x*1.0+", ";
+					salida += "\"y\" : "+y*1.0+", ";
 					salida += "\"image\" : \""+imagenes.get(tiles[x][y]).getName().replace(".png", "")+"\" ";
 					salida += "},";
 				}

@@ -34,6 +34,7 @@ public class Editor extends JPanel implements KeyListener, MouseListener{
 		this.h = height;
 		this.w = width;
 		this.tS = tileSize;
+		tiles=new int[w][h];
 		currentTileX = 0;
 		currentTileY = 0;
 		imgIndex = 0;
