@@ -7,14 +7,16 @@ import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
+import java.awt.event.MouseMotionListener;
 import java.io.File;
 import java.util.ArrayList;
 
 import javax.swing.JPanel;
 
 import NodoImagen.NodoImg;
+import NodoObjects.NodoObj;
 
-public class Editor extends JPanel implements KeyListener, MouseListener{
+public class Editor extends JPanel implements KeyListener, MouseListener, MouseMotionListener{
 
 	private Graphics dbg;
 	private Image dbImage = null;
@@ -24,7 +26,11 @@ public class Editor extends JPanel implements KeyListener, MouseListener{
 	int currentTileX, currentTileY;
 	int anchorX, anchorY;
 	int imgIndex;
+	boolean playerSpawn, itemSpawn, orbSpawn;
 	ArrayList<NodoImg> imagenes;
+    ArrayList<NodoObj>  jugadores;
+    ArrayList<NodoObj>  items;
+                 NodoObj orb;
 	String path;
 	
 	private static final long serialVersionUID = 1L;
@@ -39,7 +45,9 @@ public class Editor extends JPanel implements KeyListener, MouseListener{
 		currentTileY = 0;
 		imgIndex = 0;
 		imagenes = new ImagesLoader().getImagesFromDir(file);
-		
+		jugadores = new ArrayList<NodoObj>(4);
+        items = new ArrayList<NodoObj>();
+
 		for(int x=0;x<tiles.length;x++){
 			for(int y=0;y<tiles[0].length;y++){
 				tiles[x][y]=-1;
@@ -74,9 +82,24 @@ public class Editor extends JPanel implements KeyListener, MouseListener{
 					dbg.drawLine(x*tS, y*tS, x*tS, h*tS);
 				}
 		}
-		 
 
- 		
+         dbg.setColor(Color.cyan);
+         for(NodoObj nob : jugadores)                        {
+             dbg.drawRect(nob.x*tS, nob.y*tS, tS, tS);
+             dbg.drawLine(nob.x*tS, nob.y*tS, nob.x*tS+tS,nob.y*tS+ tS);
+         }
+
+        dbg.setColor(Color.yellow);
+        for(NodoObj nob : items)                        {
+            dbg.drawRect(nob.x*tS, nob.y*tS, tS, tS);
+            dbg.drawLine(nob.x*tS, nob.y*tS, nob.x*tS+tS,nob.y*tS+ tS);
+        }
+        dbg.setColor(Color.magenta);
+        if(orb!= null)                        {
+            dbg.drawRect(orb.x*tS, orb.y*tS, tS, tS);
+            dbg.drawLine(orb.x*tS, orb.y*tS, orb.x*tS+tS,orb.y*tS+ tS);
+        }
+
 		 dbg.setColor(Color.RED);
 		 if(!bigChunk){
 			dbg.drawRect(currentTileX*tS, currentTileY*tS, tS, tS);
@@ -90,13 +113,22 @@ public class Editor extends JPanel implements KeyListener, MouseListener{
 		 }
 		 
 			dbg.drawRect(imgIndex*tS,  (tiles[0].length+1)*tS, tS, tS);
-		 
+
+            dbg.setColor(Color.cyan);
+
+        if(playerSpawn)
+		    dbg.drawString("PlayerSpawn Mode", tS,(tiles[0].length+1)*tS+tS*2);
+
+        if(itemSpawn)
+            dbg.drawString("ItemSpawn Mode", tS,(tiles[0].length+1)*tS+tS*2);
+
+        if(orbSpawn)
+            dbg.drawString("OrbSpawn Mode", tS,(tiles[0].length+1)*tS+tS*2);
+
 		 g.drawImage(dbImage, 0, 0, null);
 		 repaint();
 		 
  	}
-	
-	
 	
 	@Override
 	public void keyPressed(KeyEvent arg0) {
@@ -123,17 +155,33 @@ public class Editor extends JPanel implements KeyListener, MouseListener{
 		
 		if(arg0.getKeyChar()==' '){
 			bigChunk = true;
-			System.out.println("space");
 			anchorX = currentTileX;
 			anchorY = currentTileY;
 		}
-		
+
+        //spawn locations
+        if(arg0.getKeyCode()==KeyEvent.VK_I){
+            itemSpawn = itemSpawn ? false : true;
+            orbSpawn = playerSpawn = false;
+        }
+
+        if(arg0.getKeyCode()==KeyEvent.VK_O){
+            orbSpawn = orbSpawn ? false : true;
+            itemSpawn = playerSpawn = false;
+        }
+
+        if(arg0.getKeyCode()==KeyEvent.VK_P){
+            playerSpawn = playerSpawn ? false : true;
+            itemSpawn = orbSpawn = false;
+        }
+
+
 		if(arg0.getKeyCode()==40){
-			tiles[currentTileX][currentTileY]=imgIndex;
-		}
+            setItem(currentTileX, currentTileY,imgIndex );
+        }
 		
 		if(arg0.getKeyCode()==38){
-			tiles[currentTileX][currentTileY]=-1;
+            removeItem(currentTileX,currentTileY);
 		}
 		
 		if(arg0.getKeyCode()==KeyEvent.VK_LEFT){
@@ -147,7 +195,10 @@ public class Editor extends JPanel implements KeyListener, MouseListener{
 		}
 		
 		if(arg0.getKeyCode()==KeyEvent.VK_ENTER){
-			new JsonExport().writeFile(tiles, imagenes, path);
+            if(orb!=null&& jugadores.size()>0&&items.size()>0)
+		    	new JsonExport().writeFile(tiles, imagenes,jugadores,items,orb, path);
+            else
+                System.out.println("you must place items, players and the orb.");
 		}
 		
 		
@@ -170,32 +221,120 @@ public class Editor extends JPanel implements KeyListener, MouseListener{
 
 	@Override
 	public void mouseClicked(MouseEvent arg0) {
-		
+       if (arg0.getButton()== MouseEvent.BUTTON1){
+           setItem(currentTileX, currentTileY,imgIndex );
+       }
+
+        if (arg0.getButton()== MouseEvent.BUTTON3||arg0.getButton()== MouseEvent.BUTTON2){
+            removeItem(currentTileX,currentTileY);
+        }
 	}
 
 
 	@Override
 	public void mouseEntered(MouseEvent arg0) {
-		
+
 	}
 
 
 	@Override
 	public void mouseExited(MouseEvent arg0) {
-		
+
 	}
 
 
 	@Override
 	public void mousePressed(MouseEvent arg0) {
-		
+
 	}
 
 
 	@Override
 	public void mouseReleased(MouseEvent arg0) {
-		
+
 	}
 
-	
+    @Override
+    public void mouseDragged(MouseEvent e) {
+    }
+
+    @Override
+    public void mouseMoved(MouseEvent e) {
+
+        currentTileX = e.getX()/tS;
+        currentTileY = (e.getY()-tS)/tS;
+
+        if(currentTileX<0)
+            currentTileX = 0;
+
+        if(currentTileY<0)
+            currentTileX = 0;
+
+        if(currentTileY>tiles[0].length-1)
+            currentTileY = tiles[0].length-1;
+
+        if(currentTileX>tiles.length-1)
+            currentTileX  = tiles.length-1;
+
+    }
+
+
+    void setItem(int currentTileX, int currentTileY, int imgIndex){
+        if(playerSpawn)  {
+            boolean exist =false;
+            for(NodoObj nob : jugadores) {
+                    if(nob.x==currentTileX&&nob.y==currentTileY)
+                        exist = true;
+            }
+            if(!exist){
+                if(jugadores.size()<4)
+                  jugadores.add(new NodoObj(currentTileX,currentTileY));
+            }
+            return;
+        }
+        if(itemSpawn){
+            boolean exist =false;
+            for(NodoObj nob : items) {
+                if(nob.x==currentTileX&&nob.y==currentTileY)
+                    exist = true;
+            }
+            if(!exist){
+                items.add(new NodoObj(currentTileX,currentTileY));
+            }
+            return;
+        }
+        if(orbSpawn){
+            orb = new NodoObj(currentTileX,currentTileY);
+              return;
+        }
+        tiles[currentTileX][currentTileY]=imgIndex;
+    }
+
+    void removeItem(int currentTileX, int currentTileY)
+    {
+        if(playerSpawn)  {
+            for(NodoObj nob : jugadores) {
+                if(nob.x==currentTileX&&nob.y==currentTileY)       {
+                   jugadores.remove(nob);
+                    break;                                          }
+            }
+
+            return;
+        }
+        if(itemSpawn){
+            for(NodoObj nob : items) {
+                if(nob.x==currentTileX&&nob.y==currentTileY)    {
+                   items.remove(nob);
+                    break;
+                }
+            }
+
+            return;
+        }
+        if(orbSpawn){
+                 orb = null;
+            return;
+        }
+             tiles[currentTileX][currentTileY]=-1;
+    }
 }

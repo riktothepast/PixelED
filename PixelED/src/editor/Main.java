@@ -21,7 +21,8 @@ public class Main {
             		jframe.add(scr);
             		jframe.setVisible(true);
             		jframe.addKeyListener(scr);
-            		
+            		jframe.addMouseListener(scr);
+                    jframe.addMouseMotionListener(scr);
                     return;
                 } 
             }
